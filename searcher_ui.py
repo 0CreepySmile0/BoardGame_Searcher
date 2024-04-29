@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
+from tkinter import messagebox
 import matplotlib
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
@@ -16,8 +17,7 @@ class SearcherUI(tk.Tk):
         if not isinstance(dataframe, pd.DataFrame):
             raise TypeError
         self.__df = dataframe
-        self.__current_df = dataframe
-        self.__current_sort = ""
+        self.__current_df = dataframe.copy()
         col = list(dataframe.columns)
         if graph1 is not None:
             if (len(graph1) != 2) or (graph1[0] not in col) or \
@@ -46,6 +46,8 @@ class SearcherUI(tk.Tk):
         self.rowconfigure(0, weight=2)
         self.rowconfigure(1, weight=13)
         self.rowconfigure(2, weight=5)
+        self.__current_sort = []
+        self.__current_search = "Name"
         self.__create_menu()
         self.__search_frame = self.__create_search_frame()
         tree_frame = self.__create_tree_frame()
@@ -59,21 +61,22 @@ class SearcherUI(tk.Tk):
         search_menu = tk.Menu(menubar, tearoff=False)
         menubar.add_cascade(label="Search by", menu=search_menu)
         for i in self.__df.columns.values:
-            search_menu.add_command(label=i)
+            search_menu.add_command(label=i, command=lambda x=i: self.__config_search(x))
         menubar.add_cascade(label="Exit", command=self.destroy)
         self.config(menu=menubar)
 
     def __create_search_frame(self):
-        frame = tk.LabelFrame(self, text="Search board game by ID")
+        frame = tk.LabelFrame(self, text="Search board game by Name")
         self.__search_text = tk.StringVar()
         self.__search_box = tk.Entry(frame, textvariable=self.__search_text)
+        self.__search_box.bind("<Return>", self.__search_handler)
         self.__sort_box = ttk.Menubutton(frame, text="Sort by")
         sort_menu = tk.Menu(self.__sort_box, tearoff=False)
-        sort_menu.add_command(label="Original", command=lambda : self.__fill_tree("Original"))
         for i in self.__df.columns.values:
-            sort_menu.add_command(label=i, command=lambda x=i: self.__fill_tree(x))
+            temp_bool = tk.BooleanVar()
+            sort_menu.add_checkbutton(label=i, variable=temp_bool, command=lambda x=i, y=temp_bool: self.__sort_tree(x, y))
         self.__sort_box.config(menu=sort_menu)
-        self.__search_button = tk.Button(frame, text="Search")
+        self.__search_button = tk.Button(frame, text="Search", command=self.__search_handler)
         frame.columnconfigure(0, weight=18)
         frame.columnconfigure(1, weight=1)
         frame.columnconfigure(2, weight=1)
@@ -81,6 +84,10 @@ class SearcherUI(tk.Tk):
         self.__sort_box.grid(column=1, row=0, sticky="nsew", padx=5, pady=5)
         self.__search_button.grid(column=2, row=0, sticky="nsew", padx=5, pady=5)
         return frame
+
+    def __create_bar_frame(self):
+        frame = tk.LabelFrame(self, text="")
+
 
     def __create_tree_frame(self):
         frame = tk.Frame(self)
@@ -94,7 +101,7 @@ class SearcherUI(tk.Tk):
         self.__tree.config(yscrollcommand=scroll_y.set)
         for i in head:
             self.__tree.heading(i, text=i)
-        self.__fill_tree("Original")
+        self.__fill_tree()
         self.__tree.grid(column=0, row=0, sticky="nsew")
         scroll_x.grid(column=0, row=1, sticky="ew")
         scroll_y.grid(column=1, row=0, sticky="ns")
@@ -123,22 +130,39 @@ class SearcherUI(tk.Tk):
         self.__canvas4.get_tk_widget().grid(column=3, row=0)
         return frame
 
-    def __fill_tree(self, text):
-        if self.__current_sort == text:
-            return
-        self.__current_sort = text
-        if text == "Original":
-            self.__clear_tree()
-            self.__current_df = self.__df.copy(deep=True)
-            for i in range(len(self.__df.index)):
-                temp = [self.__df[col][i] for col in list(self.__df.columns)]
-                self.__tree.insert("", tk.END, values=temp)
-            return
+    def __config_search(self, text: str):
+        self.__search_frame["text"] = f"Search board game by {text}"
+        self.__current_search = text
+
+    def __search_handler(self, *args):
         self.__clear_tree()
-        self.__current_df.sort_values(by=text, axis=0, inplace=True)
-        self.__current_df.reset_index(drop=True, inplace=True)
-        for i in range(len(self.__current_df.index)):
-            temp = [self.__current_df[col][i] for col in list(self.__current_df.columns)]
+        text = self.__search_text.get()
+        temp_df = self.__df[text in self.__df[self.__current_search]]
+        temp_df = temp_df.reset_index(drop=True)
+        for i in range(len(temp_df.index)):
+            temp = [temp_df[col][i] for col in list(temp_df.columns)]
+            self.__tree.insert("", tk.END, values=temp)
+
+    def __fill_tree(self):
+        self.__clear_tree()
+        self.__current_df = self.__df.copy()
+        for i in range(len(self.__df.index)):
+            temp = [self.__df[col][i] for col in list(self.__df.columns)]
+            self.__tree.insert("", tk.END, values=temp)
+
+    def __sort_tree(self, text: str, selected: tk.BooleanVar):
+        if selected.get():
+            self.__current_sort.append(text)
+        else:
+            self.__current_sort.remove(text)
+            if not self.__current_sort:
+                self.__fill_tree()
+                return
+        self.__clear_tree()
+        temp_df = self.__df.sort_values(by=self.__current_sort, axis=0)
+        temp_df = temp_df.reset_index(drop=True)
+        for i in range(len(temp_df.index)):
+            temp = [temp_df[col][i] for col in list(temp_df.columns)]
             self.__tree.insert("", tk.END, values=temp)
 
     def __clear_tree(self):
