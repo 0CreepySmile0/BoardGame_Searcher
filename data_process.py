@@ -6,6 +6,9 @@ def get_board_game_df():
     temp_df = pd.read_csv("Data/board_game.csv", sep=";")
     temp_df.drop(temp_df[(temp_df["Domains"].isnull()) & (temp_df["Mechanics"].isnull())].index, inplace=True)
     temp_df.drop(temp_df[temp_df["Year Published"] <= 0].index, inplace=True)
+    temp_df.drop(temp_df[temp_df["Min Players"] <= 0].index, inplace=True)
+    temp_df.drop(temp_df[temp_df["Max Players"] <= 0].index, inplace=True)
+    temp_df.drop(temp_df[temp_df["Max Players"] < temp_df["Min Players"]].index, inplace=True)
     temp_df.dropna(subset=["Owned Users"], inplace=True)
     temp_df["Owned Users"] = temp_df["Owned Users"].astype(np.int64)
     temp_df["Year Published"] = temp_df["Year Published"].astype(np.int64)
@@ -19,7 +22,3 @@ def get_board_game_df():
     temp_df.fillna(value="-", inplace=True)
     temp_df.reset_index(drop=True, inplace=True)
     return temp_df
-
-
-if __name__ == "__main__":
-    df = get_board_game_df()
