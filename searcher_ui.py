@@ -143,14 +143,13 @@ class SearcherUI(tk.Tk):
     def __fill_tree(self, df: pd.DataFrame):
 
         def fill(index=0):
-            self.__disable_search_frame()
-            if len(df.index) - index >= 321:
-                for i in range(index, index+321):
+            if len(df.index) - index >= 543:
+                for i in range(index, index+543):
                     temp = [df[col][i] for col in list(df.columns)]
                     self.__tree.insert("", "end", values=temp)
                     self.__bar["value"] = (i/len(df.index))*100
                 self.__bar_frame["text"] = f"Filling data: {sum(1 for _ in self.__tree.get_children())} filled"
-                self.after(1, lambda: fill(index+321))
+                self.after(1, lambda: fill(index+543))
             else:
                 for i in range(index, len(df.index)):
                     temp = [df[col][i] for col in list(df.columns)]
@@ -158,6 +157,7 @@ class SearcherUI(tk.Tk):
                     self.__bar["value"] = (i/len(df.index))*100
                 self.__bar_frame["text"] = f"Done: {sum(1 for _ in self.__tree.get_children())} filled"
                 self.after(1, self.__enable_search_frame)
+        self.__disable_search_frame()
         self.__clear_tree()
         fill()
 
