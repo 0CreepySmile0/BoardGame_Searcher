@@ -3,18 +3,18 @@ from tkinter import ttk
 import matplotlib
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
-import pandas as pd
+from searcher_controller import SearcherController
 matplotlib.use("TkAgg")
 
 
 class SearcherUI(tk.Tk):
-    def __init__(self, dataframe: pd.DataFrame, graph1: list=None, graph2: str=None,
+    def __init__(self, controller: SearcherController, graph1: list=None, graph2: str=None,
                  graph3: list=None, graph4: list=None):
         super().__init__()
-        if not isinstance(dataframe, pd.DataFrame):
+        if not isinstance(controller, SearcherController):
             raise TypeError
-        self.__df = dataframe
-        col = list(dataframe.columns)
+        self.__controller = controller
+        col = list(self.__controller.original_data.columns)
         if graph1 is not None:
             if (len(graph1) != 2) or (graph1[0] not in col) or \
                     (graph1[1] not in col) or (graph1[0] == graph1[1]):
@@ -59,7 +59,7 @@ class SearcherUI(tk.Tk):
         menubar = tk.Menu(self)
         search_menu = tk.Menu(menubar, tearoff=False)
         menubar.add_cascade(label="Search by", menu=search_menu)
-        for i in self.__df.columns.values:
+        for i in self.__controller.original_data.columns.values:
             search_menu.add_command(label=i, command=lambda x=i: self.__config_search(x))
         menubar.add_cascade(label="Exit", command=self.destroy)
         self.config(menu=menubar)
@@ -71,9 +71,12 @@ class SearcherUI(tk.Tk):
         self.__search_box.bind("<Return>", lambda x: self.__update_tree("", "Search"))
         self.__sort_box = ttk.Menubutton(frame, text="Sort by")
         sort_menu = tk.Menu(self.__sort_box, tearoff=False)
-        for i in self.__df.columns.values:
+        bool_var = {}
+        for i in self.__controller.original_data.columns.values:
             temp_bool = tk.BooleanVar()
+            bool_var[i] = temp_bool
             sort_menu.add_checkbutton(label=i, variable=temp_bool, command=lambda x=i, y=temp_bool: self.__update_tree(x, "Sort", y.get()))
+        sort_menu.add_command(label="Clear", command=lambda: self.__clear_sort(bool_var))
         self.__sort_box.config(menu=sort_menu)
         self.__search_button = tk.Button(frame, text="Search", command=lambda: self.__update_tree("", "Search"))
         frame.columnconfigure(0, weight=18)
@@ -96,7 +99,7 @@ class SearcherUI(tk.Tk):
         frame = tk.Frame(self)
         frame.columnconfigure(0, weight=1)
         frame.rowconfigure(0, weight=1)
-        head = list(self.__df.columns)
+        head = list(self.__controller.original_data.columns)
         self.__tree = ttk.Treeview(frame, columns=head, show="headings", selectmode="none")
         scroll_x = tk.Scrollbar(frame, orient="horizontal", command=self.__tree.xview)
         scroll_y = tk.Scrollbar(frame, orient="vertical", command=self.__tree.yview)
@@ -104,7 +107,7 @@ class SearcherUI(tk.Tk):
         self.__tree.config(yscrollcommand=scroll_y.set)
         for i in head:
             self.__tree.heading(i, text=i)
-        self.__fill_tree(self.__df)
+        self.__fill_tree(self.__controller.original_data)
         self.__tree.grid(column=0, row=0, sticky="nsew")
         scroll_x.grid(column=0, row=1, sticky="ew")
         scroll_y.grid(column=1, row=0, sticky="ns")
@@ -120,24 +123,32 @@ class SearcherUI(tk.Tk):
         self.__ax2 = self.__fig2.add_subplot()
         self.__ax3 = self.__fig3.add_subplot()
         self.__ax4 = self.__fig4.add_subplot()
+        frame.rowconfigure(0, weight=1)
+        frame1 = tk.LabelFrame(frame, text="")
+        frame2 = tk.LabelFrame(frame, text="")
+        frame3 = tk.LabelFrame(frame, text="")
+        frame4 = tk.LabelFrame(frame, text="")
+        self.__canvas1 = FigureCanvasTkAgg(self.__fig1, master=frame1)
+        self.__canvas2 = FigureCanvasTkAgg(self.__fig2, master=frame2)
+        self.__canvas3 = FigureCanvasTkAgg(self.__fig3, master=frame3)
+        self.__canvas4 = FigureCanvasTkAgg(self.__fig4, master=frame4)
+        self.__canvas1.get_tk_widget().grid(column=0, row=0, padx=10, pady=10)
+        self.__canvas2.get_tk_widget().grid(column=0, row=0, padx=10, pady=10)
+        self.__canvas3.get_tk_widget().grid(column=0, row=0, padx=10, pady=10)
+        self.__canvas4.get_tk_widget().grid(column=0, row=0, padx=10, pady=10)
         for i in range(4):
             frame.columnconfigure(i, weight=1)
+            eval(f"frame{i+1}.columnconfigure(0, weight=1)")
+            eval(f"frame{i+1}.rowconfigure(0, weight=1)")
+            eval(f"frame{i+1}.grid(column={i}, row=0)")
         frame.rowconfigure(0, weight=1)
-        self.__canvas1 = FigureCanvasTkAgg(self.__fig1, master=frame)
-        self.__canvas1.get_tk_widget().grid(column=0, row=0)
-        self.__canvas2 = FigureCanvasTkAgg(self.__fig2, master=frame)
-        self.__canvas2.get_tk_widget().grid(column=1, row=0)
-        self.__canvas3 = FigureCanvasTkAgg(self.__fig3, master=frame)
-        self.__canvas3.get_tk_widget().grid(column=2, row=0)
-        self.__canvas4 = FigureCanvasTkAgg(self.__fig4, master=frame)
-        self.__canvas4.get_tk_widget().grid(column=3, row=0)
         return frame
 
     def __config_search(self, text: str):
         self.__search_frame["text"] = f"Search board game by {text}"
         self.__current_mod["Search"] = text
 
-    def __fill_tree(self, df: pd.DataFrame):
+    def __fill_tree(self, df):
 
         def fill(index=0):
             if len(df.index) - index >= 543:
@@ -158,24 +169,12 @@ class SearcherUI(tk.Tk):
         self.__clear_tree()
         fill()
 
-    def __search_tree(self, df: pd.DataFrame, search):
-        text = self.__search_text.get()
-        if not text:
-            return df
-        word = text.split(" ")
-        mask = eval(" & ".join([f"(df['{search}'].astype(str).str.contains('{i}'))" for i in word]))
-        temp_df = df[mask]
-        temp_df.reset_index(drop=True, inplace=True)
-        return temp_df
-
-    def __sort_tree(self, df: pd.DataFrame):
-        if not self.__current_mod["Sort"]:
-            return df
-        temp_df = df.sort_values(by=self.__current_mod["Sort"], axis=0)
-        temp_df.reset_index(drop=True, inplace=True)
-        return temp_df
-
     def __update_tree(self, text: str, mode: str, bool_var: bool=None):
+        if mode == "Clear Sort":
+            temp_df = self.__controller.modified_data(self.__search_text.get(),
+                                                      self.__current_mod["Search"],
+                                                      self.__current_mod["Sort"])
+            self.__fill_tree(temp_df)
         if bool_var is not None:
             if bool_var:
                 self.__current_mod[mode].append(text)
@@ -184,15 +183,16 @@ class SearcherUI(tk.Tk):
         if (not self.__current_mod["Sort"]) and (not self.__search_text.get()):
             if self.__search_trace == self.__search_text.get():
                 return
-            self.__fill_tree(self.__df)
+            self.__fill_tree(self.__controller.original_data)
         else:
-            temp_search = self.__search_tree(self.__df, self.__current_mod["Search"])
-            temp_sort = self.__sort_tree(temp_search)
+            temp_df = self.__controller.modified_data(self.__search_text.get(),
+                                                      self.__current_mod["Search"],
+                                                      self.__current_mod["Sort"])
             if mode == "Search":
                 if self.__search_trace == self.__search_text.get():
                     return
             self.__search_trace = self.__search_text.get()
-            self.__fill_tree(temp_sort)
+            self.__fill_tree(temp_df)
 
     def __disable_search_frame(self):
         self.__search_box.unbind("<Return>")
@@ -210,6 +210,12 @@ class SearcherUI(tk.Tk):
     def __clear_tree(self):
         for i in self.__tree.get_children():
             self.__tree.delete(i)
+
+    def __clear_sort(self, bool_var_dict: dict):
+        for i in bool_var_dict:
+            bool_var_dict[i].set(False)
+        self.__current_mod["Sort"].clear()
+        self.__update_tree("", "Clear Sort")
 
     def run(self):
         self.mainloop()
