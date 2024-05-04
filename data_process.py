@@ -19,6 +19,6 @@ def get_board_game_df():
     for i in temp_df["Complexity Average"].unique():
         temp1 = i.replace(",", ".")
         temp_df["Complexity Average"].replace(to_replace=i, value=float(temp1), inplace=True)
-    temp_df.fillna(value="-", inplace=True)
+    temp_df.fillna(value="Unknown", inplace=True)
     temp_df.reset_index(drop=True, inplace=True)
     return temp_df
