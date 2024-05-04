@@ -6,12 +6,13 @@ from matplotlib.figure import Figure
 import seaborn as sns
 import pandas as pd
 from searcher_controller import SearcherController
+
 matplotlib.use("TkAgg")
 
 
 class SearcherUI(tk.Tk):
-    def __init__(self, controller: SearcherController, graph1: list=None, graph2: str=None,
-                 graph3: list=None, graph4: list=None):
+    def __init__(self, controller: SearcherController, graph1: list = None, graph2: str = None,
+                 graph3: list = None, graph4: list = None):
         super().__init__()
         if not isinstance(controller, SearcherController):
             raise TypeError
@@ -58,10 +59,17 @@ class SearcherUI(tk.Tk):
         for i in self._controller.original_data.columns.values:
             temp_bool = tk.BooleanVar()
             bool_var[i] = temp_bool
-            sort_menu.add_checkbutton(label=i, variable=temp_bool, command=lambda x=i, y=temp_bool: self._update_display(x, "Sort", y.get()))
+            sort_menu.add_checkbutton(label=i, variable=temp_bool,
+                                      command=lambda x=i, y=temp_bool: self._update_display(x,
+                                                                                            "Sort",
+                                                                                            y.get()))
+        self._desc_bool = tk.BooleanVar()
+        sort_menu.add_checkbutton(label="Descending", variable=self._desc_bool,
+                                  command=lambda: self._update_display("", "desc_sort"))
         sort_menu.add_command(label="Clear", command=lambda: self._clear_sort(bool_var))
         self._sort_box.config(menu=sort_menu)
-        self._search_button = tk.Button(frame, text="Search", command=lambda: self._update_display("", "Search"))
+        self._search_button = tk.Button(frame, text="Search",
+                                        command=lambda: self._update_display("", "Search"))
         frame.columnconfigure(0, weight=18)
         frame.columnconfigure(1, weight=1)
         frame.columnconfigure(2, weight=1)
@@ -117,10 +125,10 @@ class SearcherUI(tk.Tk):
         self._canvas4 = FigureCanvasTkAgg(fig4, master=self._fig_frame4)
         for i in range(4):
             frame.columnconfigure(i, weight=1)
-            eval(f"self._canvas{i+1}.get_tk_widget().grid(column=0, row=0, padx=10, pady=10)")
-            eval(f"self._fig_frame{i+1}.columnconfigure(0, weight=1)")
-            eval(f"self._fig_frame{i+1}.rowconfigure(0, weight=1)")
-            eval(f"self._fig_frame{i+1}.grid(column={i}, row=0)")
+            eval(f"self._canvas{i + 1}.get_tk_widget().grid(column=0, row=0, padx=10, pady=10)")
+            eval(f"self._fig_frame{i + 1}.columnconfigure(0, weight=1)")
+            eval(f"self._fig_frame{i + 1}.rowconfigure(0, weight=1)")
+            eval(f"self._fig_frame{i + 1}.grid(column={i}, row=0)")
         frame.rowconfigure(0, weight=1)
         self._plot_graph(1, self._controller.original_data)
         self._plot_graph(2, self._controller.original_data)
@@ -133,19 +141,22 @@ class SearcherUI(tk.Tk):
     def _fill_tree(self, df: pd.DataFrame):
         def fill(index=0):
             if len(df.index) - index >= 543:
-                for i in range(index, index+543):
+                for i in range(index, index + 543):
                     temp = [df[col][i] for col in list(df.columns)]
                     self._tree.insert("", "end", values=temp)
-                    self._bar["value"] = (i/len(df.index))*100
-                self._bar_frame["text"] = f"Filling data: {sum(1 for _ in self._tree.get_children())} filled"
-                self.after(1, lambda: fill(index+543))
+                    self._bar["value"] = (i / len(df.index)) * 100
+                self._bar_frame[
+                    "text"] = f"Filling data: {sum(1 for _ in self._tree.get_children())} filled"
+                self.after(1, lambda: fill(index + 543))
             else:
                 for i in range(index, len(df.index)):
                     temp = [df[col][i] for col in list(df.columns)]
                     self._tree.insert("", "end", values=temp)
-                    self._bar["value"] = (i/len(df.index))*100
-                self._bar_frame["text"] = f"Done: {sum(1 for _ in self._tree.get_children())} filled"
+                    self._bar["value"] = (i / len(df.index)) * 100
+                self._bar_frame[
+                    "text"] = f"Done: {sum(1 for _ in self._tree.get_children())} filled"
                 self.after(1, self._enable_search_frame)
+
         self._disable_search_frame()
         self._clear_tree()
         fill()
@@ -166,15 +177,16 @@ class SearcherUI(tk.Tk):
         eval(f"self._fig_frame{which}.config(text=text)")
         eval(f"self._canvas{which}.draw()")
 
-    def _update_display(self, text: str, mode: str, bool_var: bool=None):
+    def _update_display(self, text: str, mode: str, bool_var: bool = None):
         if bool_var is not None:
             if bool_var:
                 self._current_mod[mode].append(text)
             else:
                 self._current_mod[mode].remove(text)
         temp_df = self._controller.modified_data(self._search_text.get(),
-                                                  self._current_mod["Search"],
-                                                  self._current_mod["Sort"])
+                                                 self._current_mod["Search"],
+                                                 self._current_mod["Sort"],
+                                                 self._desc_bool.get())
         self._update_tree(temp_df)
         self._plot_graph(2, temp_df)
 

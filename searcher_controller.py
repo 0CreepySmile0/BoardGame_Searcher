@@ -39,10 +39,10 @@ class SearcherController:
         return temp_df
 
     @staticmethod
-    def _sort_data(df: pd.DataFrame, sort_list: list):
+    def _sort_data(df: pd.DataFrame, sort_list: list, ascending: bool):
         if not sort_list:
             return df
-        temp_df = df.sort_values(by=sort_list, axis=0)
+        temp_df = df.sort_values(by=sort_list, axis=0, ascending=ascending)
         temp_df.reset_index(drop=True, inplace=True)
         return temp_df
 
@@ -50,11 +50,12 @@ class SearcherController:
     def original_data(self):
         return self.__df
 
-    def modified_data(self, search_text: str="", search_by: str="", sort_list: list=[]):
+    def modified_data(self, search_text: str="", search_by: str="", sort_list: list=[],
+                      descending: bool=False):
         if (not search_text) and (not sort_list):
             return self.original_data
         temp_search = self._search_data(self.__df, search_by, search_text)
-        temp_sort = self._sort_data(temp_search, sort_list)
+        temp_sort = self._sort_data(temp_search, sort_list, not descending)
         return temp_sort
 
     def get_attribute(self, which: int, df: pd.DataFrame):
@@ -77,6 +78,4 @@ class SearcherController:
             mean = (u*r).sum()/u.sum()
             sd = ((((r-mean)**2)*u).sum() / u.sum())**0.5
             text = f"Mean = {mean:.3f}, SD = {sd:.3f}"
-        elif which == 3:
-            text = f""
         return eval(f"self._att{which}"), text
