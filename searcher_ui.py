@@ -1,23 +1,21 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 import matplotlib
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from matplotlib.figure import Figure
 import seaborn as sns
 import pandas as pd
-from searcher_controller import SearcherController
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.figure import Figure
 
+from searcher_controller import SearcherController
 matplotlib.use("TkAgg")
 
 
 class SearcherUI(tk.Tk):
-    def __init__(self, controller: SearcherController, graph1: list = None, graph2: str = None,
-                 graph3: list = None, graph4: list = None):
+    def __init__(self, controller: SearcherController):
         super().__init__()
         if not isinstance(controller, SearcherController):
             raise TypeError
         self._controller = controller
-
         self.title("Board Game Suggester")
         self._init_component()
 
@@ -45,7 +43,7 @@ class SearcherUI(tk.Tk):
         menubar.add_cascade(label="Search by", menu=search_menu)
         for i in self._controller.original_data.columns.values:
             search_menu.add_command(label=i, command=lambda x=i: self._config_search(x))
-        menubar.add_cascade(label="Exit", command=self.destroy)
+        menubar.add_cascade(label="Exit", command=self.quit)
         self.config(menu=menubar)
 
     def _create_search_frame(self):
@@ -92,6 +90,7 @@ class SearcherUI(tk.Tk):
         frame.rowconfigure(0, weight=1)
         head = list(self._controller.original_data.columns)
         self._tree = ttk.Treeview(frame, columns=head, show="headings", selectmode="none")
+        self._tree.bind("<<TreeviewSelect>>", lambda x: self._pop_message())
         scroll_x = tk.Scrollbar(frame, orient="horizontal", command=self._tree.xview)
         scroll_y = tk.Scrollbar(frame, orient="vertical", command=self._tree.yview)
         self._tree.config(xscrollcommand=scroll_x.set)
@@ -109,7 +108,7 @@ class SearcherUI(tk.Tk):
         fig1 = Figure(figsize=(5, 4.5), dpi=60)
         fig2 = Figure(figsize=(5, 4.5), dpi=60)
         fig3 = Figure(figsize=(5, 4.5), dpi=60)
-        fig4 = Figure(figsize=(5, 4.5), dpi=60)
+        fig4 = Figure(figsize=(8.5, 4.5), dpi=55)
         self._ax1 = fig1.add_subplot()
         self._ax2 = fig2.add_subplot()
         self._ax3 = fig3.add_subplot()
@@ -130,8 +129,8 @@ class SearcherUI(tk.Tk):
             eval(f"self._fig_frame{i + 1}.rowconfigure(0, weight=1)")
             eval(f"self._fig_frame{i + 1}.grid(column={i}, row=0)")
         frame.rowconfigure(0, weight=1)
-        self._plot_graph(1, self._controller.original_data)
-        self._plot_graph(2, self._controller.original_data)
+        for i in range(4):
+            self._plot_graph(i+1, self._controller.original_data)
         return frame
 
     def _config_search(self, text: str):
@@ -168,12 +167,16 @@ class SearcherUI(tk.Tk):
             self._fill_tree(df)
 
     def _plot_graph(self, which: int, data: pd.DataFrame):
-        att, text = self._controller.get_attribute(which, data)
+        att, text, df = self._controller.get_attribute(which, data)
         eval(f"self._ax{which}.clear()")
         if which == 1:
-            sns.scatterplot(data, x=att[0], y=att[1], ax=self._ax1)
+            sns.scatterplot(df, x=att[0], y=att[1], ax=self._ax1)
         elif which == 2:
-            sns.histplot(data, x=att[0], ax=self._ax2)
+            sns.histplot(df, x=att[0], ax=self._ax2)
+        elif which == 3:
+            sns.barplot(df, x=att[0], y=att[1], ax=self._ax3)
+        elif which == 4:
+            sns.barplot(df, y=att[0], x=att[1], ax=self._ax4)
         eval(f"self._fig_frame{which}.config(text=text)")
         eval(f"self._canvas{which}.draw()")
 
@@ -188,9 +191,14 @@ class SearcherUI(tk.Tk):
                                                  self._current_mod["Sort"],
                                                  self._desc_bool.get())
         self._update_tree(temp_df)
-        self._plot_graph(2, temp_df)
+        for i in range(4):
+            self._plot_graph(i+1, temp_df)
 
     def _disable_search_frame(self):
+        try:
+            self._tree.config(selectmode="none")
+        except:
+            pass
         self._search_box.unbind("<Return>")
         self._search_box.config(state="disabled")
         self._sort_box.config(state="disabled")
@@ -198,6 +206,10 @@ class SearcherUI(tk.Tk):
 
     def _enable_search_frame(self):
         self._bar["value"] = 100
+        try:
+            self._tree.config(selectmode="browse")
+        except:
+            pass
         self._search_box.bind("<Return>", lambda x: self._update_display("", "Search"))
         self._search_box.config(state="normal")
         self._sort_box.config(state="normal")
@@ -212,6 +224,19 @@ class SearcherUI(tk.Tk):
             bool_var_dict[i].set(False)
         self._current_mod["Sort"].clear()
         self._update_display("", "Clear Sort")
+
+    def _pop_message(self):
+        try:
+            item_ob = self._tree.item(self._tree.selection()[0])
+            item = item_ob["values"]
+            col = list(self._controller.original_data.columns)
+            text = ""
+            for i in range(len(item)):
+                text += f"{col[i]}: {item[i]}\n"
+            messagebox.showinfo(title="Selected item", message=text)
+            self._tree.selection_remove(self._tree.selection()[0])
+        except:
+            pass
 
     def run(self):
         self.mainloop()

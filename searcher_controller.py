@@ -33,7 +33,8 @@ class SearcherController:
         if not search_text:
             return df
         word = search_text.split(" ")
-        mask = eval(" & ".join([f"(df['{search_by}'].astype(str).str.contains('{i}'))" for i in word]))
+        mask = eval(" & ".join([f"(df['{search_by}'].astype(str).str.contains('{i}'))"
+                                for i in word]))
         temp_df = df[mask]
         temp_df.reset_index(drop=True, inplace=True)
         return temp_df
@@ -69,13 +70,28 @@ class SearcherController:
                 strength = "strong"
             else:
                 strength = "weak"
+            temp_df = df
+            att = self._att1
             text = f"Correlation coefficient = {df[self._att1[0]].corr(df[self._att1[1]]):.3f}\n" \
                    f"{strength.capitalize()} {pos_neg} correlation\n" \
-                   f"The more {self._att1[0]} the more {self._att1[1]}"
+                   f"The more {self._att1[0]} the more {self._att1[1]}\n(Original table)"
         elif which == 2:
             u = df[self._att2[1]]
             r = df[self._att2[0]]
             mean = (u*r).sum()/u.sum()
             sd = ((((r-mean)**2)*u).sum() / u.sum())**0.5
-            text = f"Mean = {mean:.3f}, SD = {sd:.3f}"
-        return eval(f"self._att{which}"), text
+            temp_df = df
+            att = self._att2
+            text = f"{self._att2[0]} (Current table)\nMean = {mean:.3f}, SD = {sd:.3f}"
+        elif which == 3:
+            temp_df = pd.DataFrame({f"{self._att3[0]} vs {self._att3[1]}": [self._att3[0], self._att3[1]],
+                                    "Count": [df[self._att3[0]].sum(), df[self._att3[1]].sum()]})
+            att = [f"{self._att3[0]} vs {self._att3[1]}", "Count"]
+            text = f"Number of {self._att3[0]} vs number of {self._att3[1]}\n(Current table)"
+        elif which == 4:
+            unique = [i.split()[0] for i in df[self._att4[0]].unique() if "," not in i]
+            temp_df = pd.DataFrame({self._att4[0]: unique,
+                                    self._att4[1]: [df[df[self._att4[0]].str.contains(i)][self._att4[1]].sum() for i in unique]})
+            att = self._att4
+            text = f"Number of {self._att4[1]} for each {self._att4[0]}"
+        return att, text, temp_df
