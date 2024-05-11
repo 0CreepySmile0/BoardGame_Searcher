@@ -253,7 +253,7 @@ class SearcherUI(tk.Tk):
         if not isinstance(controller, SearcherController):
             raise TypeError
         self._controller = controller
-        self.title("Board Game Suggester")
+        self.title("Board Game Searcher")
         self._init_component()
 
     def _init_component(self):
@@ -262,10 +262,10 @@ class SearcherUI(tk.Tk):
         self._frame1 = SearcherFrame1(notebook, self._controller, self._frame2)
         notebook.pack(pady=10, expand=True)
         self._create_menu()
-        self._frame1.pack(fill='both', expand=True)
-        notebook.add(self._frame1, text='Home')
-        self._frame2.pack(fill='both', expand=True)
-        notebook.add(self._frame2, text='Story telling')
+        self._frame1.pack(fill="both", expand=True)
+        notebook.add(self._frame1, text="Table")
+        self._frame2.pack(fill="both", expand=True)
+        notebook.add(self._frame2, text="Graph")
 
     def _create_menu(self):
         menubar = tk.Menu(self)

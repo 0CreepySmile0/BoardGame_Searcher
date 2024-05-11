@@ -74,7 +74,7 @@ class SearcherController:
             att = self._att1
             text = f"Correlation coefficient = {df[self._att1[0]].corr(df[self._att1[1]]):.3f}\n" \
                    f"{strength.capitalize()} {pos_neg} correlation\n" \
-                   f"The more {self._att1[0]} the more {self._att1[1]}\n(Original table)"
+                   f"The more {self._att1[0]} the more {self._att1[1]}"
         elif which == 2:
             u = df[self._att2[1]]
             r = df[self._att2[0]]
@@ -82,12 +82,12 @@ class SearcherController:
             sd = ((((r-mean)**2)*u).sum() / u.sum())**0.5
             temp_df = df
             att = self._att2
-            text = f"{self._att2[0]} (Current table)\nMean = {mean:.3f}, SD = {sd:.3f}"
+            text = f"{self._att2[0]}\nMean = {mean:.3f}, SD = {sd:.3f}, Min = {r.min():.3f}, Max = {r.max():.3f}"
         elif which == 3:
             temp_df = pd.DataFrame({f"{self._att3[0]} vs {self._att3[1]}": [self._att3[0], self._att3[1]],
                                     "Count": [df[self._att3[0]].sum(), df[self._att3[1]].sum()]})
             att = [f"{self._att3[0]} vs {self._att3[1]}", "Count"]
-            text = f"Number of {self._att3[0]} vs number of {self._att3[1]}\n(Current table)"
+            text = f"Number of {self._att3[0]} vs number of {self._att3[1]}"
         elif which == 4:
             unique = [i.split()[0] for i in df[self._att4[0]].unique() if "," not in i]
             temp_df = pd.DataFrame({self._att4[0]: unique,
