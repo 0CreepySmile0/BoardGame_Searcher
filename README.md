@@ -1,23 +1,40 @@
-# How to run
+# Board Game Searcher
 
 ---
-### First step
-Make sure that you have these files in directory
-- [Data](https://github.com/0CreepySmile0/BoardGame_Searcher/tree/main/Data) (Directory)
-- [data_process.py](https://github.com/0CreepySmile0/BoardGame_Searcher/blob/main/data_process.py) (Python file)
-- [searcher_controller.py](https://github.com/0CreepySmile0/BoardGame_Searcher/blob/main/searcher_controller.py) (Python file)
-- [searcher_ui.py](https://github.com/0CreepySmile0/BoardGame_Searcher/blob/main/searcher_ui.py) (Python file)
-- [searcher_app.py](https://github.com/0CreepySmile0/BoardGame_Searcher/blob/main/searcher_app.py) (Python file)
-- [requirements.txt](https://github.com/0CreepySmile0/BoardGame_Searcher/blob/main/requirements.txt) (Text file)
 
-### Second step
-Make sure that all required libraries are the same version. Simply run the commands below
-```
-pip install -r requirements.txt
-```
+A table contains the data of board games from [kaggle](https://www.kaggle.com/datasets/andrewmvd/board-games)
 
-### Third step
-Run the commands below to start the application
-```
-python searcher_app.py
-```
+This application is for searching a board game by given column also comes with sort. It also presents some statistic and graph in "Graph" page
+
+| **Table page** | ![Table](screenshots/Table.png)      |
+|----------------|--------------------------------------|
+| **Graph page** | ![Graph](screenshots/data/Graph.png) |
+
+## Requirements
+
+---
+Python version 3.10.11 or better is required and the required python packages are list in [requirements.txt](https://github.com/0CreepySmile0/BoardGame_Searcher/blob/main/requirements.txt)
+
+## Installation and set up virtual environment
+
+---
+See [installation](https://github.com/0CreepySmile0/BoardGame_Searcher/wiki/Installation)
+
+Brief instruction:
+1. Download the code to local directory and do the next step in the directory where the downloaded files are in
+2. Create virtual environment `virtualenv env`
+3. Activate virtual environment `env\Scripts\activate` (Windows) and install the required packages `pip install -r requirements.txt`
+
+## Running the application
+
+---
+1. After done the installation part above run the command `python searcher_app.py` to start the application
+2. When done and want to exit virtual environment do `deactivate` to exit
+
+## Documents
+
+---
+Project-related documents can be found [here](https://github.com/0CreepySmile0/BoardGame_Searcher/wiki)
+
+- [Screenshots](https://github.com/0CreepySmile0/BoardGame_Searcher/wiki/Screenshots)
+- [UML class and sequence diagram](https://github.com/0CreepySmile0/BoardGame_Searcher/wiki/UML)
