@@ -9,13 +9,13 @@ from searcher_controller import SearcherController
 matplotlib.use("TkAgg")
 
 
-class SearcherFrame1(ttk.Frame):
+class SearcherFrame1(tk.Frame):
 
     def __init__(self, parent, controller: SearcherController, figure_frame: "SearcherFrame2"):
         super().__init__(master=parent)
         if not isinstance(controller, SearcherController):
             raise TypeError
-        self.fig_frame = figure_frame
+        self._fig_frame = figure_frame
         self._controller = controller
         self._init_component()
 
@@ -25,7 +25,6 @@ class SearcherFrame1(ttk.Frame):
         self.rowconfigure(1, weight=1)
         self.rowconfigure(2, weight=98)
         self._current_mod = {"Sort": [], "Search": "Name"}
-        self._search_trace = ""
         self._bar_frame = self._create_bar_frame()
         self._search_frame = self._create_search_frame()
         tree_frame = self._create_tree_frame()
@@ -135,7 +134,7 @@ class SearcherFrame1(ttk.Frame):
                                                  self._desc_bool.get())
         self._update_tree(temp_df)
         for i in range(4):
-            self.fig_frame.plot_graph(i+1, temp_df)
+            self._fig_frame.plot_graph(i+1, temp_df)
 
     def _disable_search_frame(self):
         try:
@@ -182,7 +181,7 @@ class SearcherFrame1(ttk.Frame):
             pass
 
 
-class SearcherFrame2(ttk.Frame):
+class SearcherFrame2(tk.Frame):
 
     def __init__(self, parent, controller: SearcherController):
         super().__init__(master=parent)

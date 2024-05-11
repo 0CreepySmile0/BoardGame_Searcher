@@ -94,4 +94,4 @@ class SearcherController:
                                     self._att4[1]: [df[df[self._att4[0]].str.contains(i)][self._att4[1]].sum() for i in unique]})
             att = self._att4
             text = f"Number of {self._att4[1]} for each {self._att4[0]}"
-        return att, text, temp_df
+        return [att, text, temp_df]
